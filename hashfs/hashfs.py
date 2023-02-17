@@ -70,16 +70,21 @@ class HashFS(object):
         extension appended. The copy process uses a temporary file to store the
         initial contents and then moves that file to it's final location.
         """
+
+        # Create temporary file and calculate checksums
+        checksums, fname = self._mktempfile(stream)
+
         filepath = self.idpath(id, extension)
+        self.makepath(os.path.dirname(filepath))
 
         if not os.path.isfile(filepath):
             # Only move file if it doesn't already exist.
             is_duplicate = False
-            fname = self._mktempfile(stream)
-            self.makepath(os.path.dirname(filepath))
             shutil.move(fname, filepath)
         else:
+            # Else delete temporary file
             is_duplicate = True
+            self.delete(fname)
 
         return (filepath, is_duplicate)
 
@@ -97,12 +102,30 @@ class HashFS(object):
             finally:
                 os.umask(oldmask)
 
+        # Hash objects to digest
+        sha1_hashobj = hashlib.sha1()
+        sha256_hashobj = hashlib.sha256()
+        sha384_hashobj = hashlib.sha384()
+        sha512_hashobj = hashlib.sha512()
+        md5_hashobj = hashlib.md5()
+
         for data in stream:
             tmp.write(to_bytes(data))
+            sha256_hashobj.update(to_bytes(data))
+            sha512_hashobj.update(to_bytes(data))
+            sha1_hashobj.update(to_bytes(data))
+            md5_hashobj.update(to_bytes(data))
 
         tmp.close()
 
-        return tmp.name
+        checksum_dict = {}
+        checksum_dict["sha1"] = sha1_hashobj.hexdigest()
+        checksum_dict["sha256"] = sha256_hashobj.hexdigest()
+        checksum_dict["sha384"] = sha384_hashobj.hexdigest()
+        checksum_dict["sha512"] = sha512_hashobj.hexdigest()
+        checksum_dict["md5"] = md5_hashobj.hexdigest()
+
+        return checksum_dict, tmp.name
 
     def get(self, file):
         """Return :class:`HashAdress` from given id or path. If `file` does not
