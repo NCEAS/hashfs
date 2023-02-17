@@ -174,11 +174,13 @@ def test_hashfs_contains(fs, stringio):
 
 def test_hashfs_get(fs, stringio):
     address = fs.put(stringio)
-
+    # New named tuple without checksums
+    getobj = hashfs.HashAddress(address.id, address.relpath,
+                                address.abspath, address.is_duplicate)
     assert not address.is_duplicate
-    assert fs.get(address.id) == address
-    assert fs.get(address.relpath) == address
-    assert fs.get(address.abspath) == address
+    assert fs.get(address.id) == getobj
+    assert fs.get(address.relpath) == getobj
+    assert fs.get(address.abspath) == getobj
     assert fs.get("invalid") is None
 
 

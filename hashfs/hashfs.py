@@ -60,11 +60,11 @@ class HashFS(object):
         stream = Stream(file)
 
         with closing(stream):
-            checksum_list, filepath, is_duplicate = self._copy(stream, extension)
+            checksum_dict, filepath, is_duplicate = self._copy(stream, extension)
 
-        id = checksum_list["sha256"]
+        id = checksum_dict["sha256"]
 
-        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
+        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate, checksum_dict)
 
     def _copy(self, stream, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
@@ -379,7 +379,7 @@ class HashFS(object):
 
 
 class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate"])
+    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate", "checksums"])
 ):
     """File address containing file's path on disk and it's content hash ID.
 
@@ -390,10 +390,12 @@ class HashAddress(
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
+        checksums (dict): A list of checksums to validate objects (md5, sha1,
+            sha256, sha384, sha512)
     """
 
-    def __new__(cls, id, relpath, abspath, is_duplicate=False):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate)
+    def __new__(cls, id, relpath, abspath, is_duplicate=False, checksums={}):
+        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate, checksums)
 
 
 class Stream(object):
