@@ -60,12 +60,13 @@ class HashFS(object):
         stream = Stream(file)
 
         with closing(stream):
-            id = self.computehash(stream)
-            filepath, is_duplicate = self._copy(stream, id, extension)
+            checksum_list, filepath, is_duplicate = self._copy(stream, extension)
+
+        id = checksum_list["sha256"]
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate)
 
-    def _copy(self, stream, id, extension=None):
+    def _copy(self, stream, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process uses a temporary file to store the
         initial contents and then moves that file to it's final location.
@@ -73,6 +74,7 @@ class HashFS(object):
 
         # Create temporary file and calculate checksums
         checksums, fname = self._mktempfile(stream)
+        id = checksums['sha256']
 
         filepath = self.idpath(id, extension)
         self.makepath(os.path.dirname(filepath))
@@ -86,7 +88,7 @@ class HashFS(object):
             is_duplicate = True
             self.delete(fname)
 
-        return (filepath, is_duplicate)
+        return (checksums, filepath, is_duplicate)
 
     def _mktempfile(self, stream):
         """Create a named temporary file from a :class:`Stream` object and
