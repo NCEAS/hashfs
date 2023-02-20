@@ -69,7 +69,9 @@ class HashFS(object):
     def _copy(self, stream, extension=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process uses a temporary file to store the
-        initial contents and then moves that file to it's final location.
+        initial contents and returns a dictionary of algorithms and their
+        checksum values. Once the file has been determined not to exist/be a
+        duplicate, it then moves that file to it's final location.
         """
 
         # Create temporary file and calculate checksums
@@ -92,7 +94,7 @@ class HashFS(object):
 
     def _mktempfile(self, stream):
         """Create a named temporary file from a :class:`Stream` object and
-        return its filename.
+        return its filename and a dictionary of its algorithms and checksums.
         """
         tmp = NamedTemporaryFile(delete=False)
 
@@ -390,7 +392,7 @@ class HashAddress(
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
-        checksums (dict): A list of checksums to validate objects (md5, sha1,
+        checksums (dict, optional): A list of checksums to validate objects (md5, sha1,
             sha256, sha384, sha512)
     """
 
