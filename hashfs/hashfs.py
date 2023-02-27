@@ -116,6 +116,7 @@ class HashFS(object):
         for data in stream:
             tmp.write(to_bytes(data))
             sha256_hashobj.update(to_bytes(data))
+            sha384_hashobj.update(to_bytes(data))
             sha512_hashobj.update(to_bytes(data))
             sha1_hashobj.update(to_bytes(data))
             md5_hashobj.update(to_bytes(data))
