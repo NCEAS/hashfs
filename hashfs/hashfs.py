@@ -45,7 +45,7 @@ class HashFS(object):
         self.fmode = fmode
         self.dmode = dmode
 
-    def put(self, file, extension=None):
+    def put(self, file, extension=None, algorithm=None, checksum=None):
         """Store contents of `file` on disk using its content hash for the
         address.
 
@@ -53,6 +53,10 @@ class HashFS(object):
             file (mixed): Readable object or path to file.
             extension (str, optional): Optional extension to append to file
                 when saving.
+            algorithm (str, optional): Optional algorithm value to include
+                when returning checksum.
+            checksum (str, optional): Optional checksum to validate object
+                before moving to permanent location.
 
         Returns:
             HashAddress: File's hash address.
@@ -60,7 +64,7 @@ class HashFS(object):
         stream = Stream(file)
 
         with closing(stream):
-            checksum_dict, filepath, is_duplicate = self._copy(stream, extension)
+            checksum_dict, filepath, is_duplicate = self._copy(stream, extension, algorithm, checksum)
 
         id = checksum_dict["sha256"]
 
