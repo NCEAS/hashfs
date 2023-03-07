@@ -71,7 +71,7 @@ class HashFS(object):
         extension appended. The copy process uses a temporary file to store the
         initial contents and returns a dictionary of algorithms and their
         checksum values. Once the file has been determined not to exist/be a
-        duplicate, it then moves that file to it's final location.
+        duplicate, it then moves that file to its final location.
         """
 
         # Create temporary file and calculate checksums
