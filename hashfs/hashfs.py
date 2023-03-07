@@ -70,22 +70,30 @@ class HashFS(object):
 
         return HashAddress(id, self.relpath(filepath), filepath, is_duplicate, checksum_dict)
 
-    def _copy(self, stream, extension=None):
+    def _copy(self, stream, extension=None, algorithm=None, checksum=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process uses a temporary file to store the
         initial contents and returns a dictionary of algorithms and their
         checksum values. Once the file has been determined not to exist/be a
-        duplicate, it then moves that file to its final location.
+        duplicate, it then moves that file to its final location. If an algorithm
+        and checksum is provided, it will proceed to validate the object and
+        delete the file if the checksum stored does not match what is provided.
         """
 
         # Create temporary file and calculate checksums
-        checksums, fname = self._mktempfile(stream)
+        checksums, fname = self._mktempfile(stream, algorithm)
         id = checksums['sha256']
 
         filepath = self.idpath(id, extension)
         self.makepath(os.path.dirname(filepath))
 
         if not os.path.isfile(filepath):
+            # Validate object if algorithm and checksum exists
+            if algorithm is not None and checksum is not None:
+                checksum_stored = checksums[algorithm]
+                if checksum_stored != checksum:
+                    self.delete(fname)
+                    raise ValueError(f"Checksums do not match - file not stored. Checksum provided: {checksum} != Checksum calculated: {checksum_stored}")
             # Only move file if it doesn't already exist.
             is_duplicate = False
             shutil.move(fname, filepath)
