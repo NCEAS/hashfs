@@ -104,9 +104,11 @@ class HashFS(object):
 
         return (checksums, filepath, is_duplicate)
 
-    def _mktempfile(self, stream):
+    def _mktempfile(self, stream, algorithm=None):
         """Create a named temporary file from a :class:`Stream` object and
         return its filename and a dictionary of its algorithms and checksums.
+        If an algorithm is provided, it will add the respective checksum to
+        the dictionary.
         """
         tmp = NamedTemporaryFile(delete=False)
 
@@ -119,8 +121,19 @@ class HashFS(object):
                 os.umask(oldmask)
 
         # Hash objects to digest
-        algorithms = ["sha1", "sha256", "sha384", "sha512", "md5"]
-        hash_algorithms = [hashlib.new(algorithm) for algorithm in algorithms]
+        default_algo_list = ["sha1", "sha256", "sha384", "sha512", "md5"]
+        other_algo_list = [
+            "sha224",
+            "sha3_224",
+            "sha3_256",
+            "sha3_384",
+            "sha3_512",
+            "blake2b",
+            "blake2s",
+        ]
+        if algorithm is not None and algorithm in other_algo_list:
+            default_algo_list.append(algorithm)
+        hash_algorithms = [hashlib.new(algorithm) for algorithm in default_algo_list]
 
         for data in stream:
             tmp.write(to_bytes(data))
@@ -130,7 +143,7 @@ class HashFS(object):
         tmp.close()
 
         checksums = [hash_algorithm.hexdigest() for hash_algorithm in hash_algorithms]
-        checksum_dict = dict(zip(algorithms, checksums))
+        checksum_dict = dict(zip(default_algo_list, checksums))
 
         return checksum_dict, tmp.name
 
