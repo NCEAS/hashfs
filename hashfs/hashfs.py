@@ -107,28 +107,18 @@ class HashFS(object):
                 os.umask(oldmask)
 
         # Hash objects to digest
-        sha1_hashobj = hashlib.sha1()
-        sha256_hashobj = hashlib.sha256()
-        sha384_hashobj = hashlib.sha384()
-        sha512_hashobj = hashlib.sha512()
-        md5_hashobj = hashlib.md5()
+        algorithms = ["sha1", "sha256", "sha384", "sha512", "md5"]
+        hash_algorithms = [hashlib.new(algorithm) for algorithm in algorithms]
 
         for data in stream:
             tmp.write(to_bytes(data))
-            sha256_hashobj.update(to_bytes(data))
-            sha384_hashobj.update(to_bytes(data))
-            sha512_hashobj.update(to_bytes(data))
-            sha1_hashobj.update(to_bytes(data))
-            md5_hashobj.update(to_bytes(data))
+            for hash_algorithm in hash_algorithms:
+                hash_algorithm.update(to_bytes(data))
 
         tmp.close()
 
-        checksum_dict = {}
-        checksum_dict["sha1"] = sha1_hashobj.hexdigest()
-        checksum_dict["sha256"] = sha256_hashobj.hexdigest()
-        checksum_dict["sha384"] = sha384_hashobj.hexdigest()
-        checksum_dict["sha512"] = sha512_hashobj.hexdigest()
-        checksum_dict["md5"] = md5_hashobj.hexdigest()
+        checksums = [hash_algorithm.hexdigest() for hash_algorithm in hash_algorithms]
+        checksum_dict = dict(zip(algorithms, checksums))
 
         return checksum_dict, tmp.name
 
