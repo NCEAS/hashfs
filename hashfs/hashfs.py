@@ -93,7 +93,7 @@ class HashFS(object):
                 checksum_stored = checksums[algorithm]
                 if checksum_stored != checksum:
                     self.delete(fname)
-                    raise ValueError(f"Checksums do not match - file not stored. Checksum provided: {checksum} != Checksum calculated: {checksum_stored}")
+                    raise ValueError(f"Checksums do not match - file not stored. Algorithm: {algorithm}. Checksum provided: {checksum} != Checksum calculated: {checksum_stored}")
             # Only move file if it doesn't already exist.
             is_duplicate = False
             shutil.move(fname, filepath)
