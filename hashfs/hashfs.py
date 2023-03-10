@@ -96,7 +96,14 @@ class HashFS(object):
                     raise ValueError(f"Checksums do not match - file not stored. Algorithm: {algorithm}. Checksum provided: {checksum} != Checksum calculated: {checksum_stored}")
             # Only move file if it doesn't already exist.
             is_duplicate = False
-            shutil.move(fname, filepath)
+            try:
+                shutil.move(fname, filepath)
+            except Exception as err:
+                print(f"Unexpected {err=}, {type(err)=}")
+                if os.path.isfile(filepath):
+                    self.delete(filepath)
+                self.delete(fname)
+                raise Exception(f"Aborting Upload - an unexpected error has occurred when moving file: {id} - Error: {err}")
         else:
             # Else delete temporary file
             is_duplicate = True
