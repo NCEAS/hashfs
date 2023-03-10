@@ -54,9 +54,9 @@ class HashFS(object):
             extension (str, optional): Optional extension to append to file
                 when saving.
             algorithm (str, optional): Optional algorithm value to include
-                when returning checksum.
+                when returning hex digests.
             checksum (str, optional): Optional checksum to validate object
-                before moving to permanent location.
+                against hex digest before moving to permanent location.
 
         Returns:
             HashAddress: File's hash address.
@@ -64,36 +64,36 @@ class HashFS(object):
         stream = Stream(file)
 
         with closing(stream):
-            checksum_dict, filepath, is_duplicate = self._copy(stream, extension, algorithm, checksum)
+            hex_digest_dict, filepath, is_duplicate = self._copy(stream, extension, algorithm, checksum)
 
-        id = checksum_dict["sha256"]
+        id = hex_digest_dict["sha256"]
 
-        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate, checksum_dict)
+        return HashAddress(id, self.relpath(filepath), filepath, is_duplicate, hex_digest_dict)
 
     def _copy(self, stream, extension=None, algorithm=None, checksum=None):
         """Copy the contents of `stream` onto disk with an optional file
         extension appended. The copy process uses a temporary file to store the
         initial contents and returns a dictionary of algorithms and their
-        checksum values. Once the file has been determined not to exist/be a
+        hex digest values. Once the file has been determined not to exist/be a
         duplicate, it then moves that file to its final location. If an algorithm
         and checksum is provided, it will proceed to validate the object and
-        delete the file if the checksum stored does not match what is provided.
+        delete the file if the hex digest stored does not match what is provided.
         """
 
-        # Create temporary file and calculate checksums
-        checksums, fname = self._mktempfile(stream, algorithm)
-        id = checksums['sha256']
+        # Create temporary file and calculate hex digests
+        hex_digests, fname = self._mktempfile(stream, algorithm)
+        id = hex_digests['sha256']
 
         filepath = self.idpath(id, extension)
         self.makepath(os.path.dirname(filepath))
 
         if not os.path.isfile(filepath):
-            # Validate object if algorithm and checksum exists
+            # Validate object if algorithm and checksum provided
             if algorithm is not None and checksum is not None:
-                checksum_stored = checksums[algorithm]
-                if checksum_stored != checksum:
+                hex_digest_stored = hex_digests[algorithm]
+                if hex_digest_stored != checksum:
                     self.delete(fname)
-                    raise ValueError(f"Checksums do not match - file not stored. Algorithm: {algorithm}. Checksum provided: {checksum} != Checksum calculated: {checksum_stored}")
+                    raise ValueError(f"Hex digest and checksum do not match - file not stored. Algorithm: {algorithm}. Checksum provided: {checksum} != Hex Digest: {hex_digest_stored}")
             # Only move file if it doesn't already exist.
             is_duplicate = False
             try:
@@ -109,12 +109,12 @@ class HashFS(object):
             is_duplicate = True
             self.delete(fname)
 
-        return (checksums, filepath, is_duplicate)
+        return (hex_digests, filepath, is_duplicate)
 
     def _mktempfile(self, stream, algorithm=None):
         """Create a named temporary file from a :class:`Stream` object and
-        return its filename and a dictionary of its algorithms and checksums.
-        If an algorithm is provided, it will add the respective checksum to
+        return its filename and a dictionary of its algorithms and hex digests.
+        If an algorithm is provided, it will add the respective hex digest to
         the dictionary.
         """
         tmp = NamedTemporaryFile(delete=False)
@@ -149,10 +149,10 @@ class HashFS(object):
 
         tmp.close()
 
-        checksums = [hash_algorithm.hexdigest() for hash_algorithm in hash_algorithms]
-        checksum_dict = dict(zip(default_algo_list, checksums))
+        hex_digest_list = [hash_algorithm.hexdigest() for hash_algorithm in hash_algorithms]
+        hex_digest_dict = dict(zip(default_algo_list, hex_digest_list))
 
-        return checksum_dict, tmp.name
+        return hex_digest_dict, tmp.name
 
     def get(self, file):
         """Return :class:`HashAdress` from given id or path. If `file` does not
@@ -407,7 +407,7 @@ class HashFS(object):
 
 
 class HashAddress(
-    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate", "checksums"])
+    namedtuple("HashAddress", ["id", "relpath", "abspath", "is_duplicate", "hex_digests"])
 ):
     """File address containing file's path on disk and it's content hash ID.
 
@@ -418,12 +418,12 @@ class HashAddress(
         is_duplicate (boolean, optional): Whether the hash address created was
             a duplicate of a previously existing file. Can only be ``True``
             after a put operation. Defaults to ``False``.
-        checksums (dict, optional): A list of checksums to validate objects (md5, sha1,
+        hex_digests (dict, optional): A list of hex digests to validate objects (md5, sha1,
             sha256, sha384, sha512)
     """
 
-    def __new__(cls, id, relpath, abspath, is_duplicate=False, checksums={}):
-        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate, checksums)
+    def __new__(cls, id, relpath, abspath, is_duplicate=False, hex_digests={}):
+        return super(HashAddress, cls).__new__(cls, id, relpath, abspath, is_duplicate, hex_digests)
 
 
 class Stream(object):
