@@ -321,9 +321,12 @@ class HashFS(object):
 
         return os.path.join(self.root, *paths) + extension
 
-    def computehash(self, stream):
+    def computehash(self, stream, algorithm=None):
         """Compute hash of file using :attr:`algorithm`."""
-        hashobj = hashlib.new(self.algorithm)
+        if algorithm is None:
+            hashobj = hashlib.new(self.algorithm)
+        else:
+            hashobj = hashlib.new(algorithm)
         for data in stream:
             hashobj.update(to_bytes(data))
         return hashobj.hexdigest()
